@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Insights App</title>
+    <style>
+        /* Background Image */
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-image: url('/static/images/cloud.png'); /* Replace with your image URL */
+            background-size: cover;         /* Ensures the image covers the entire area */
+            background-repeat: no-repeat;   /* Prevents the image from repeating */
+            background-attachment: fixed;   /* Keeps the image fixed while scrolling */
+            background-position: center center; /* Centers the image both horizontally and vertically */
+            color: #fff;
+            min-height: 100vh;              /* Ensures the body covers the full viewport height */
+            margin: 0;
+        }
+
+        /* Input and Button Styling */
+        input {
+            padding: 8px;
+            margin: 10px;
+            width: 200px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Styling for the recommendation message */
+        .recommendation {
+            color: rgb(4, 255, 92);              /* Text color */
+            font-size: large;                    /* Font size */
+            background-color: rgba(128, 128, 128, 0.7); /* Grey background with 70% opacity */
+            padding: 15px;                       /* Adds padding around the text */
+            border-radius: 8px;                  /* Rounds the corners of the background */
+            max-width: 60%;                      /* Limits the width to 60% of the screen */
+            margin: 20px auto;                   /* Center the element horizontally */
+            text-align: center;                  /* Center text inside the box */
+            display: block;                      /* Ensures the box is centered */
+        }
+
+        /* Center and Style Search History */
+        .search-history {
+            text-align: center;
+            margin-top: 30px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5); /* Dark translucent background */
+            display: inline-block;
+            border-radius: 8px;
+            width: 300px;
+        }
+
+        .search-history h3 {
+            margin: 0;
+            font-size: 1.2em;
+            color: #fff;
+        }
+
+        .search-history ul {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 10px;
+        }
+
+        .search-history li {
+            margin: 5px 0;
+            font-size: 0.9em;
+            color: #eee;
+        }
+
+        /* Footer Styling */
+        footer {
+            background-color: rgba(0, 0, 0, 0.7); /* Semi-transparent background */
+            color: #fff;
+            padding: 10px;
+            font-size: 0.9em;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Weather Insights and Recommendations</h1>
+    <h2>Created by Kolade Abobarin</h2>
+    <form method="POST">
+        <input type="text" name="city" placeholder="Enter city name (default: Lagos)" value="{{ weather.city }}" required>
+        <button type="submit">Get Weather</button>
+    </form>
+
+    {% if weather %}
+        {% if weather.error %}
+            <p style="color: red;">{{ weather.error }}</p>
+        {% else %}
+            <h2>Weather in {{ weather.city }}</h2>
+            <p>Temperature: {{ weather.temperature }} °C</p>
+            <p>Description: {{ weather.description }}</p>
+            <p>Search Timestamp: {{ timestamp }}</p>
+            <div class="recommendation">
+                <h3>{{ recommendation }}</h3>
+            </div>
+        {% endif %}
+    {% endif %}
+
+    <!-- Centered Search History Section -->
+    <div class="search-history">
+        <h3>Search History</h3>
+        <ul id="history-list"></ul>
+    </div>
+
+    <!-- Footer Section -->
+    <footer>
+        This is a side project made by Kolade Abobarin integrating Python, HTML, CSS, and JavaScript, along with the OpenWeatherMap API to create weather-based recommendations. Enjoy!
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const city = "{{ weather.city }}";
+            const timestamp = "{{ timestamp }}";
+
+            if (city) {
+                // Save current search to local storage
+                saveSearch(city, timestamp);
+            }
+
+            // Function to save the search to local storage
+            function saveSearch(city, timestamp) {
+                const searchEntry = { city, timestamp };
+                let searches = JSON.parse(localStorage.getItem('weatherSearches')) || [];
+                searches.push(searchEntry);
+                localStorage.setItem('weatherSearches', JSON.stringify(searches));
+                renderHistory();
+            }
+
+            // Function to render the search history
+            function renderHistory() {
+                const historyList = document.getElementById('history-list');
+                historyList.innerHTML = '';  // Clear the list first
+                const searches = JSON.parse(localStorage.getItem('weatherSearches')) || [];
+
+                searches.forEach((search) => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `${search.city} - ${search.timestamp}`;
+                    historyList.appendChild(listItem);
+                });
+            }
+
+            // Render the history on page load
+            renderHistory();
+        });
+    </script>
+</body>
+</html>
