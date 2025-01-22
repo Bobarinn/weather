@@ -94,34 +94,81 @@
             width: 100%;
             text-align: center;
         }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .youtube-converter {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .weather-section {
+            margin-bottom: 30px;
+        }
+
+        .search-history {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        #history-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        #history-list li {
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
     <h1>Weather Insights and Recommendations</h1>
     <h2>Created by Kolade Abobarin</h2>
-    <form method="POST">
-        <input type="text" name="city" placeholder="Enter city name (default: Lagos)" value="{{ weather.city }}" required>
-        <button type="submit">Get Weather</button>
-    </form>
+    <div class="container">
+        <!-- YouTube converter section first -->
+        <div class="youtube-converter">
+            <h2>YouTube to MP3 Converter</h2>
+            <input type="text" id="youtube-url" placeholder="Enter YouTube URL">
+            <button onclick="convertAudio()">Convert to MP3</button>
+        </div>
 
-    {% if weather %}
-        {% if weather.error %}
-            <p style="color: red;">{{ weather.error }}</p>
-        {% else %}
-            <h2>Weather in {{ weather.city }}</h2>
-            <p>Temperature: {{ weather.temperature }} °C</p>
-            <p>Description: {{ weather.description }}</p>
-            <p>Search Timestamp: {{ timestamp }}</p>
-            <div class="recommendation">
-                <h3>{{ recommendation }}</h3>
-            </div>
-        {% endif %}
-    {% endif %}
+        <!-- Weather section -->
+        <div class="weather-section">
+            <h2>Weather Check</h2>
+            <form method="POST">
+                <input type="text" name="city" placeholder="Enter city name">
+                <button type="submit">Get Weather</button>
+            </form>
 
-    <!-- Centered Search History Section -->
-    <div class="search-history">
-        <h3>Search History</h3>
-        <ul id="history-list"></ul>
+            {% if weather %}
+                {% if weather.error %}
+                    <p class="error">{{ weather.error }}</p>
+                {% else %}
+                    <div class="weather-info">
+                        <h3>{{ weather.city }}</h3>
+                        <p>Temperature: {{ weather.temperature }}°C</p>
+                        <p>Condition: {{ weather.description }}</p>
+                        {% if recommendation %}
+                            <p class="recommendation">{{ recommendation }}</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        <!-- Limited weather history -->
+        <div class="search-history">
+            <h3>Recent Searches</h3>
+            <ul id="history-list">
+                <!-- Will be populated by JavaScript -->
+            </ul>
+        </div>
     </div>
 
     <!-- Footer Section -->
@@ -154,16 +201,59 @@
                 historyList.innerHTML = '';  // Clear the list first
                 const searches = JSON.parse(localStorage.getItem('weatherSearches')) || [];
 
-                searches.forEach((search) => {
+                // Only show last 5 searches
+                searches.slice(-5).forEach((search) => {
                     const listItem = document.createElement('li');
-                    listItem.textContent = `${search.city} - ${search.timestamp}`;
-                    historyList.appendChild(listItem);
+                    listItem.textContent = `${search.city} - ${search.temperature}°C (${search.timestamp})`;
+                    historyList.prepend(listItem);
                 });
             }
 
             // Render the history on page load
             renderHistory();
         });
+
+        async function convertAudio() {
+            const url = document.getElementById('youtube-url').value;
+            if (!url) {
+                alert('Please enter a YouTube URL');
+                return;
+            }
+
+            try {
+                const response = await fetch('/convert-audio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+
+                if (response.ok) {
+                    // Get the filename from the Content-Disposition header
+                    const contentDisposition = response.headers.get('Content-Disposition');
+                    const filename = contentDisposition
+                        ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+                        : 'audio.mp3';
+
+                    // Convert response to blob and download
+                    const blob = await response.blob();
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(downloadUrl);
+                    a.remove();
+                } else {
+                    const error = await response.json();
+                    alert(`Error: ${error.error}`);
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            }
+        }
     </script>
 </body>
 </html>
