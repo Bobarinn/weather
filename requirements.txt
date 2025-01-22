@@ -14,4 +14,5 @@ gunicorn
 pytube==15.0.0
 pydub==0.25.1
 flask-cors==4.0.0
+yt-dlp==2024.3.10
 
